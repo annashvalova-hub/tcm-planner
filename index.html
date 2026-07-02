@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCM Indonesia — Cohort Planner 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#F4EFE4;--surface:#EDE8DC;--fg:#111;--border:#111;
+  --muted:#888;--accent:#E8391A;--green:#1a6b36;--amber:#b35900;--red:#c0392b;
+  --btn-bg:#111;--btn-fg:#F4EFE4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:'DM Mono',monospace;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+.stripe{background:var(--accent);height:5px}
+.header{border-bottom:2px solid var(--border);padding:1.1rem 2.5rem;display:flex;align-items:flex-end;justify-content:space-between;gap:2rem}
+.title{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;letter-spacing:.06em;line-height:1}
+.title span{color:var(--accent)}
+.header-meta{font-size:.62rem;color:var(--muted);text-align:right;line-height:2;letter-spacing:.08em;text-transform:uppercase}
+.header-meta b{color:var(--fg)}
+
+.toolbar{border-bottom:1px solid var(--border);padding:.55rem 2.5rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap}
+.sc-grp{display:flex}
+.sc-btn{padding:4px 16px;border:1px solid var(--border);border-right:none;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:.7rem;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:background .1s}
+.sc-btn:last-child{border-right:1px solid var(--border)}
+.sc-btn.active{background:var(--btn-bg);color:var(--btn-fg)}
+.sc-btn:hover:not(.active){background:var(--surface)}
+
+.main{max-width:1200px;margin:0 auto;padding:2rem 2.5rem}
+
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+
+/* Chart */
+.sec-hdr{display:flex;align-items:baseline;gap:12px;margin-bottom:.9rem;border-bottom:2px solid var(--border);padding-bottom:4px}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.08em}
+.sec-meta{font-size:.62rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.chart-wrap{height:200px;margin-bottom:2.5rem}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;margin-bottom:2rem}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;padding:.55rem .85rem;border-bottom:2px solid var(--border);text-align:left;font-weight:500;vertical-align:bottom;line-height:1.5}
+th.result{color:var(--fg)}
+td{padding:.5rem .85rem;border-bottom:1px solid #ccc;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.done-row{background:var(--surface)}
+tr.current-row{border-left:3px solid var(--accent)}
+tr.current-row td:first-child{padding-left:calc(.85rem - 3px)}
+
+/* Input cells */
+.num-inp{width:80px;font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.04em;background:transparent;border:none;border-bottom:2px solid var(--border);color:var(--fg);text-align:right;outline:none;padding:0 2px;display:block}
+.num-inp:focus{border-bottom-color:var(--accent)}
+.num-inp::placeholder{color:#ccc}
+.num-inp.fact-inp{border-bottom-color:var(--amber);color:var(--amber)}
+.inp-hint{font-size:.52rem;color:var(--muted);letter-spacing:.04em;margin-top:2px;display:block}
+.inp-hint.amber{color:var(--amber)}
+
+/* Derived values */
+.derived{font-size:.95rem;font-weight:600;color:var(--muted)}
+.derived.active{color:var(--fg)}
+.big-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.04em;line-height:1}
+.big-num.green{color:var(--green)}.big-num.red{color:var(--red)}.big-num.amber{color:var(--amber)}.big-num.muted{color:#ccc}
+
+/* Gap badge */
+.badge{display:inline-block;font-size:.6rem;padding:2px 8px;border:1px solid;letter-spacing:.04em;white-space:nowrap}
+.badge-green{border-color:var(--green);color:var(--green)}
+.badge-red{border-color:var(--red);color:var(--red)}
+.badge-amber{border-color:var(--amber);color:var(--amber)}
+.badge-gray{border-color:var(--muted);color:var(--muted)}
+
+/* Model note */
+.note{background:var(--surface);border:1px solid #ccc;padding:.85rem 1.4rem;font-size:.62rem;color:var(--muted);line-height:1.9;margin-bottom:1rem}
+.note b{color:var(--fg);font-weight:500}
+
+.sep{border-left:2px solid var(--border)}
+
+/* Tabs */
+.tabs{border-bottom:2px solid var(--border);display:flex;gap:0;background:var(--surface)}
+.tab-btn{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:.7rem 2rem;border:none;background:transparent;color:var(--muted);cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .1s}
+.tab-btn.active{color:var(--fg);border-bottom-color:var(--accent)}
+.tab-btn:hover:not(.active){color:var(--fg)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* Group planner */
+.gp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;margin-bottom:2rem}
+.gp-card{border:2px solid var(--border);background:var(--surface);padding:1.4rem}
+.gp-card.current{border-color:var(--accent)}
+.gp-month{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.06em;margin-bottom:.8rem;display:flex;align-items:baseline;gap:10px}
+.gp-month .cur-tag{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.gp-row{display:flex;justify-content:space-between;align-items:baseline;padding:.3rem 0;border-bottom:1px solid #ddd;font-size:.72rem}
+.gp-row:last-child{border-bottom:none}
+.gp-row .lbl{color:var(--muted);letter-spacing:.04em}
+.gp-row .val{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.04em}
+.gp-row .val.accent{color:var(--accent)}
+.gp-row .val.green{color:var(--green)}
+.gp-row .val.muted{color:#ccc}
+.gp-divider{border:none;border-top:2px solid var(--border);margin:.6rem 0}
+.gp-week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:.8rem 0}
+.gp-week{border:1px solid #ccc;padding:.5rem .4rem;text-align:center}
+.gp-week.w4{border-color:var(--amber);background:rgba(179,89,0,.04)}
+.gp-week-label{font-size:.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.gp-week-groups{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.04em;line-height:1}
+.gp-week-people{font-size:.55rem;color:var(--muted);margin-top:2px}
+
+@media(max-width:800px){
+  .main{padding:1.25rem}
+}
+</style>
+</head>
+<body>
+
+<div class="stripe"></div>
+<div class="header">
+  <div class="title">TCM <span>Indonesia</span><br>Cohort Planner · 2026</div>
+  <div class="header-meta">
+    <span id="hdr-meta1">Cohort = people who started onboarding that month</span><br>
+    <b id="hdr-meta2">Onboarding → Admitted to exam → Passed exam</b><br>
+    May 2026 · conversion data
+  </div>
+</div>
+
+<div class="toolbar">
+  <!-- Language switcher -->
+  <div style="display:flex;align-items:center;gap:4px;padding-right:14px;border-right:1px solid #ccc">
+    <button id="lang-en" onclick="switchLang('en')"
+      style="font-family:'DM Mono',monospace;font-size:.65rem;padding:3px 8px;border:1px solid var(--border);border-right:none;background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;letter-spacing:.04em">EN</button>
+    <button id="lang-ru" onclick="switchLang('ru')"
+      style="font-family:'DM Mono',monospace;font-size:.65rem;padding:3px 8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;letter-spacing:.04em">RU</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-right:8px;padding-right:16px;border-right:1px solid #ccc">
+    <span id="lbl-cur-month" style="font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Current month</span>
+    <select id="cur-month" onchange="setCurrentMonth(this.value)"
+      style="font-family:'DM Mono',monospace;font-size:.72rem;background:var(--bg);border:1px solid var(--border);padding:3px 6px;color:var(--fg);cursor:pointer;outline:none">
+      <option value="jun" data-i18n-month="jun">Jun</option>
+      <option value="jul" data-i18n-month="jul">Jul</option>
+      <option value="aug" data-i18n-month="aug">Aug</option>
+      <option value="sep" data-i18n-month="sep">Sep</option>
+      <option value="oct" data-i18n-month="oct">Oct</option>
+      <option value="nov" data-i18n-month="nov">Nov</option>
+    </select>
+  </div>
+  <div class="sc-grp">
+    <button class="sc-btn active" id="sc-base" onclick="setSc('base','sc-base')">Base</button>
+    <button class="sc-btn" id="sc-opt"  onclick="setSc('opt','sc-opt')">Optimistic</button>
+    <button class="sc-btn" id="sc-pes"  onclick="setSc('pes','sc-pes')">Pessimistic</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:18px;border-left:1px solid #ccc;padding-left:16px;margin-left:4px">
+    <div>
+      <div id="lbl-completion" style="font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Completed onboarding</div>
+      <div style="display:flex;align-items:baseline;gap:3px">
+        <input id="inp-completion" type="number" min="0" max="100" step="0.1" value="45.5"
+          oninput="onRateChange()"
+          style="width:52px;font-family:'DM Mono',monospace;font-size:.9rem;background:transparent;border:none;border-bottom:2px solid var(--border);text-align:right;outline:none;padding:0 2px">
+        <span style="font-size:.7rem;color:var(--muted)">%</span>
+      </div>
+      <div id="hint-completion" style="font-size:.5rem;color:var(--muted);margin-top:3px;line-height:1.4">of onboarding starters<br>→ completed onboarding</div>
+    </div>
+    <div>
+      <div id="lbl-passrate" style="font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Passed final exam</div>
+      <div style="display:flex;align-items:baseline;gap:3px">
+        <input id="inp-passrate" type="number" min="0" max="100" step="0.1" value="58.3"
+          oninput="onRateChange()"
+          style="width:52px;font-family:'DM Mono',monospace;font-size:.9rem;background:transparent;border:none;border-bottom:2px solid var(--border);text-align:right;outline:none;padding:0 2px">
+        <span style="font-size:.7rem;color:var(--muted)">%</span>
+      </div>
+      <div id="hint-passrate" style="font-size:.5rem;color:var(--muted);margin-top:3px;line-height:1.4">of those admitted to exam<br>→ passed final exam</div>
+    </div>
+    <div style="font-size:.62rem;color:var(--muted);border-left:1px solid #ddd;padding-left:14px">
+      <span id="lbl-combined">total ONB → FE:</span><br><b id="rate-combined" style="color:var(--fg);font-size:.85rem">26.5%</b>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;border-left:1px solid #ccc;padding-left:16px">
+    <div>
+      <div id="lbl-groupsize" style="font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Group size</div>
+      <div style="display:flex;align-items:baseline;gap:3px">
+        <input id="inp-groupsize" type="number" min="1" step="1" value="15"
+          oninput="render()"
+          style="width:44px;font-family:'DM Mono',monospace;font-size:.9rem;background:transparent;border:none;border-bottom:2px solid var(--border);text-align:right;outline:none;padding:0 2px">
+        <span id="unit-ppl" style="font-size:.7rem;color:var(--muted)">ppl.</span>
+      </div>
+      <div id="hint-groupsize" style="font-size:.5rem;color:var(--muted);margin-top:3px">people per group</div>
+    </div>
+  </div>
+  <div style="margin-left:auto;padding-left:16px;border-left:1px solid #ccc">
+    <div id="sync-badge" style="font-size:.55rem;color:var(--muted);line-height:1.6;text-align:right;max-width:180px"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-btn-forecast" onclick="switchTab('forecast')">Cohort Forecast</button>
+  <button class="tab-btn" id="tab-btn-groups" onclick="switchTab('groups')">Group Planner</button>
+</div>
+
+<div id="tab-forecast" class="tab-pane active">
+<div class="main">
+
+  <div class="sec-hdr">
+    <div class="sec-title" id="chart-title">Passed final exam — plan vs forecast</div>
+    <div class="sec-meta" id="chart-meta">Base</div>
+  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+
+  <div class="sec-hdr">
+    <div class="sec-title" id="tbl-title">Cohort plan by month</div>
+    <div class="sec-meta" id="tbl-subtitle">Cohort = onboarding starters · forecast calculated automatically</div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr>
+      <th id="th-month" style="width:90px">Month</th>
+      <th id="th-target" style="width:80px">Target:<br>passed<br>final exam</th>
+      <th id="th-onb" style="width:240px">Started onboarding — by week<br><span id="th-onb-hint" style="font-weight:400;color:#bbb">weeks 1–3 count this month · week 4 spills to next · enter manually</span></th>
+      <th id="th-spillout" style="width:100px">Carry to<br>next month<br><span id="th-spillout-hint" style="font-weight:400;color:#bbb">week 4 · from input</span></th>
+      <th id="th-spillin" style="width:110px">Carry in from<br>prev month<br><span id="th-spillin-hint" style="font-weight:400;color:#bbb">prev month's week 4 · auto</span></th>
+      <th class="sep" id="th-effonb" style="width:120px">Total in ONB<br>this month<br><span id="th-effonb-hint" style="font-weight:400;color:#bbb">wks 1–3 + carried in</span></th>
+      <th id="th-sched" style="width:130px">Completed ONB<br>→ admitted to FE<br><span id="th-completion" style="font-weight:400;color:#bbb">× 45.5% · auto</span></th>
+      <th id="th-proj" style="width:140px">Forecast:<br>passed final exam<br><span id="th-passrate" style="font-weight:400;color:#bbb">× 58.3% from admitted · auto</span></th>
+      <th class="sep result" id="th-fact" style="width:110px">Passed<br>final exam<br><span id="th-fact-hint" style="font-weight:400;color:#bbb">actual · enter manually</span></th>
+      <th class="result" id="th-gap" style="width:80px">Surplus</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  </div>
+
+  <div class="note" id="note-text">
+    <b>Cohort carry:</b> Enter onboarding by week. Weeks 1–3 → exam this month. Week 4 → exam next month (shown in amber).<br>
+    <b>Rates (Base):</b> completion → admission: 45.5% · pass rate: 58.3% · total: 26.5% · <b>Opt:</b> 50.8% × 65% = 33% · <b>Pes:</b> 41.8% × 55% = 23%<br>
+    May: historical data · week 4 assumed at 72 (full capacity).
+  </div>
+
+</div>
+</div><!-- /tab-forecast -->
+
+<div id="tab-groups" class="tab-pane">
+<div class="main">
+  <div id="gp-content"></div>
+</div>
+</div><!-- /tab-groups -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// REMOTE SYNC CONFIG — заполни два значения ниже (см. инструкцию):
+//   SUPABASE_URL — Project URL из Supabase (Settings → API)
+//   SUPABASE_KEY — anon public key оттуда же
+// Пока поля пустые, калькулятор работает в локальном режиме (URL + браузер).
+// ══════════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://ecrrkgexpsmcylhaxkdl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__tLeJvVJIx3CQfog2Gy7vA_3Pa01tWm';
+const ROOM_ID = 'tcm-indonesia-2026';
+function remoteEnabled(){ return SUPABASE_URL !== '' && SUPABASE_KEY !== ''; }
+
+// ── i18n ──────────────────────────────────────────────────────────────
+let lang = 'en'; // default
+
+const STRINGS = {
+  en: {
+    // months
+    may:'May', jun:'Jun', jul:'Jul', aug:'Aug', sep:'Sep', oct:'Oct', nov:'Nov',
+    jun_full:'June', jul_full:'July', aug_full:'August', sep_full:'September', oct_full:'October', nov_full:'November',
+    // toolbar
+    lbl_cur_month:'Current month',
+    sc_opt:'Optimistic', sc_pes:'Pessimistic',
+    lbl_completion:'Completed onboarding',
+    hint_completion:'of onboarding starters<br>→ completed onboarding',
+    lbl_passrate:'Passed final exam',
+    hint_passrate:'of those admitted to exam<br>→ passed final exam',
+    lbl_combined:'total ONB → FE:',
+    lbl_groupsize:'Group size',
+    hint_groupsize:'people per group',
+    unit_ppl:'ppl.',
+    sync_upd:'updated {d} · {n}',
+    sync_err:'⚠ sync error — changes are NOT shared',
+    sync_name_prompt:'Your name (shown in "last updated"):',
+    // header
+    hdr_meta1:'Cohort = people who started onboarding that month',
+    hdr_meta2:'Onboarding → Admitted to exam → Passed exam',
+    // tabs
+    tab_forecast:'Cohort Forecast',
+    tab_groups:'Group Planner',
+    // section titles
+    chart_title:'Passed final exam — plan vs forecast',
+    tbl_title:'Cohort plan by month',
+    tbl_subtitle:'Cohort = onboarding starters · forecast calculated automatically',
+    // table headers
+    th_month:'Month',
+    th_target:'Target:<br>passed<br>final exam',
+    th_onb:'Started onboarding — by week',
+    th_onb_hint:'weeks 1–3 count this month · week 4 spills to next · enter manually',
+    th_spillout:'Carry to<br>next month',
+    th_spillout_hint:'week 4 · from input',
+    th_spillin:'Carry in from<br>prev month',
+    th_spillin_hint:"prev month's week 4 · auto",
+    th_effonb:'Total in ONB<br>this month',
+    th_effonb_hint:'wks 1–3 + carried in',
+    th_sched:'Completed ONB<br>→ admitted to FE',
+    th_proj:'Forecast:<br>passed final exam',
+    th_fact:'Passed<br>final exam',
+    th_fact_hint:'actual · enter manually',
+    th_gap:'Surplus',
+    // summary
+    sm_confirmed:'confirmed', sm_now:'now',
+    sm_ok:'✓ on track', sm_fail:'behind plan', sm_nodata:'no data', sm_target:'target',
+    // table content
+    lbl_plan:'target', lbl_fact:'actual', lbl_admitted:'admitted', lbl_forecast:'forecast',
+    lbl_weeks_plus:'wks 1–3 + carried',
+    cur_tag:'NOW',
+    carry_covered:'✓ covered by carry-in', carry_needed:'still needed:',
+    carry_plus:'← +{n} from {m}', carry_minus:'← −{n} from {m}',
+    spill_to:'→ {m}', spill_from:'← {m}', spill_assumption:'→ June · assumption',
+    done_w123:'Weeks 1–3: historical data', done_w4:'Week 4: {n} ppl (assumption)',
+    done_w123_n:'Weeks 1–3: {n} ppl (month closed)', done_w4_n:'Week 4: {n} ppl → next month',
+    week_n:'Week {n}', week4_lbl:'Week 4 →',
+    wk_done:'passed', spill_done:'already passed FE',
+    fact_plus_rest:'actual {f} + remaining {r}',
+    warn_no_fact:'⚠ checked cohorts count as 0 — enter actual',
+    warn_fact_here:'⚠ enter actual here',
+    nc_toggle:"✂ don't carry surplus →",
+    nc_blocked:'✂ surplus cut off by decision',
+    // chart
+    ch_plan:'Original target', ch_adj:'Adj. target (carry-in)',
+    ch_forecast:'Forecast (current rates)',
+    ch_base:'Base (45.5%×58.3%)', ch_opt:'Opt (50.8%×65%)', ch_pes:'Pes (41.8%×55%)',
+    ch_meta:'Rates: completion {comp}% · pass rate {pass}% · total {total}%',
+    // note
+    note:'<b>Cohort carry:</b> Enter onboarding by week. Weeks 1–3 → exam this month. Week 4 → exam next month (shown in amber).<br><b>Forecast column:</b> (unchecked weeks 1–3 + carry-in) × both conversion rates. Tick <b>«passed»</b> on a week once its results are inside the actual number — that cohort leaves the forecast, and the column shows month total = actual + forecast of remaining weeks. No double counting either way: actual and forecast are never summed for the same cohort.<br><b>Rates (Base):</b> completion → admission: 45.5% · pass rate: 58.3% · total: 26.5% · <b>Opt:</b> 50.8% × 65% = 33% · <b>Pes:</b> 41.8% × 55% = 23%<br>May: historical data · week 4 assumed at 72 (full capacity).',
+    // group planner
+    gp_carry_from:'Covered by carry-in from',
+    gp_target:'FE target',
+    gp_adj:'Adjusted target (plan carry)',
+    gp_fact:'Actual (already passed)',
+    gp_pipe:'In pipeline (started, will pass)',
+    gp_own:'Remaining FE to cover',
+    gp_covered:'✓ covered', gp_onb_total:'Start additionally (future weeks)',
+    gp_per_week:'Each future week (of {n})', gp_groups_week:'Groups per week (× {gs} ppl)',
+    gp_started:'started', gp_already_n:'started: {n}',
+    gp_all_passed:'⚠ all weeks passed — no room to add starts, gap moves on',
+    gp_week:'Wk. {n}', gp_week4:'Wk. 4 →',
+    gp_w4_note:'Week 4: {g} gr. × {gs} = {p} ppl → FE in {m}',
+    gp_meta:'Rates: completion {comp}% · pass rate {pass}% · total {total}% · Group: {gs} ppl · Wks 1–3 → FE this month · Wk. 4 → FE next month',
+    gp_note:'<b>How to read:</b> weeks ticked as <b>passed</b> (synced with the Forecast tab) are frozen history — their starts and results are fixed. The card computes the remaining FE gap and spreads the ADDITIONAL groups over FUTURE weeks only. Week 4 (amber) = recommended seed for next month. Adjust group size and rates in toolbar — numbers update instantly.',
+    gp_all_done:'All months are marked as done', gp_ppl:'ppl.',
+    th_comp_hint:'× 45.5% · auto',
+    th_pass_hint:'× 58.3% from admitted · auto',
+  },
+  ru: {
+    may:'Май', jun:'Июнь', jul:'Июль', aug:'Авг', sep:'Сен', oct:'Окт', nov:'Ноя',
+    jun_full:'Июнь', jul_full:'Июль', aug_full:'Август', sep_full:'Сентябрь', oct_full:'Октябрь', nov_full:'Ноябрь',
+    lbl_cur_month:'Текущий месяц',
+    sc_opt:'Оптимистичный', sc_pes:'Пессимистичный',
+    lbl_completion:'Успешно завершили онбординг',
+    hint_completion:'из начавших онбординг<br>→ успешно завершили онбординг',
+    lbl_passrate:'Сдали финальный экзамен',
+    hint_passrate:'из допущенных к экзамену<br>→ прошли финальный экзамен',
+    lbl_combined:'итого онбординг → экзамен:',
+    lbl_groupsize:'Размер группы',
+    hint_groupsize:'человек в группе',
+    unit_ppl:'чел.',
+    sync_upd:'обновлено {d} · {n}',
+    sync_err:'⚠ ошибка синхронизации — изменения НЕ общие',
+    sync_name_prompt:'Твоё имя (будет видно в «кто обновил»):',
+    hdr_meta1:'Когорта = начавшие онбординг за месяц',
+    hdr_meta2:'Онбординг → Допущен к экзамену → Сдал экзамен',
+    tab_forecast:'Прогноз по когортам',
+    tab_groups:'Планировщик групп',
+    chart_title:'Сдали финальный экзамен — план vs прогноз',
+    tbl_title:'Когортный план по месяцам',
+    tbl_subtitle:'Когорта = начавшие онбординг · прогноз считается автоматически',
+    th_month:'Месяц',
+    th_target:'Цель:<br>сдали<br>финальный<br>экзамен',
+    th_onb:'Начали онбординг — по неделям',
+    th_onb_hint:'недели 1–3 считаются в этом месяце · неделя 4 переходит в следующий · вводите вручную',
+    th_spillout:'Переходят<br>в следующий месяц',
+    th_spillout_hint:'неделя 4 · из ввода',
+    th_spillin:'Пришли<br>с предыдущего месяца',
+    th_spillin_hint:'4-я неделя прошлого месяца · считается автоматически',
+    th_effonb:'Итого проходят<br>онбординг в этом месяце',
+    th_effonb_hint:'недели 1–3 своего месяца + пришедшие с прошлого',
+    th_sched:'Успешно завершили<br>онбординг → допущены к FE',
+    th_proj:'Прогноз:<br>сдали финальный экзамен',
+    th_fact:'Сдали<br>финальный экзамен',
+    th_fact_hint:'факт · вводите вручную',
+    th_gap:'Профицит',
+    sm_confirmed:'подтверждено', sm_now:'сейчас',
+    sm_ok:'✓ план выполнен', sm_fail:'план не выполнен', sm_nodata:'нет данных', sm_target:'цель',
+    lbl_plan:'план', lbl_fact:'факт', lbl_admitted:'допущено', lbl_forecast:'прогноз',
+    lbl_weeks_plus:'недели 1–3 + пришло',
+    cur_tag:'СЕЙЧАС',
+    carry_covered:'✓ покрыто переносом', carry_needed:'нужно ещё:',
+    carry_plus:'← +{n} с {m}', carry_minus:'← −{n} с {m}',
+    spill_to:'→ {m}', spill_from:'← {m}', spill_assumption:'→ июнь · допущение',
+    done_w123:'Неделя 1–3: исторические данные', done_w4:'Неделя 4: {n} чел. (допущение)',
+    done_w123_n:'Недели 1–3: {n} чел. (месяц закрыт)', done_w4_n:'Неделя 4: {n} чел. → след. месяц',
+    week_n:'Неделя {n}', week4_lbl:'Неделя 4 →',
+    wk_done:'прошла', spill_done:'уже сдали FE',
+    fact_plus_rest:'факт {f} + остаток {r}',
+    warn_no_fact:'⚠ отмеченные когорты учтены как 0 — введи факт',
+    warn_fact_here:'⚠ введи факт сюда',
+    nc_toggle:'✂ не переносить излишек →',
+    nc_blocked:'✂ излишек отрезан решением',
+    ch_plan:'Исходный план', ch_adj:'Скорр. план (перенос)',
+    ch_forecast:'Прогноз (текущие ставки)',
+    ch_base:'Base (45.5%×58.3%)', ch_opt:'Опт (50.8%×65%)', ch_pes:'Пес (41.8%×55%)',
+    ch_meta:'Конверсии в этом сценарии: завершение онбординга {comp}% · сдаваемость {pass}% · итого {total}%',
+    note:'<b>Когортный перенос:</b> Вводите онбординг по неделям. Недели 1–3 каждого месяца → сдают экзамен в этом же месяце. Неделя 4 → сдают экзамен в следующем месяце (отображается янтарным цветом).<br><b>Колонка «Прогноз»:</b> (неотмеченные недели 1–3 + приток) × обе конверсии. Когда результаты недели уже вошли в факт — отметь её галочкой <b>«прошла»</b>: эта когорта выходит из прогноза, и колонка показывает итог месяца = факт + прогноз оставшихся недель. Двойного счёта нет в обе стороны: факт и прогноз никогда не суммируются по одной и той же когорте.<br><b>Конверсии (Base):</b> завершение онбординга → допуск: 45.5% · сдаваемость: 58.3% · итого: 26.5% · <b>Опт:</b> 50.8% × 65% = 33% · <b>Пес:</b> 41.8% × 55% = 23%<br>Для мая: данные историческое · неделя 4 принята за 72 человека (допущение о полной загрузке).',
+    gp_carry_from:'Покрывает перенос с',
+    gp_target:'Цель FE',
+    gp_adj:'Скорр. цель (перенос плана)',
+    gp_fact:'Факт (уже сдали)',
+    gp_pipe:'В пайплайне (стартовали, ещё сдадут)',
+    gp_own:'Осталось закрыть FE',
+    gp_covered:'✓ покрыто', gp_onb_total:'Запустить дополнительно (будущие недели)',
+    gp_per_week:'В каждую будущую неделю (из {n})', gp_groups_week:'Групп в неделю (× {gs} чел.)',
+    gp_started:'стартовали', gp_already_n:'уже: {n}',
+    gp_all_passed:'⚠ все недели прошли — добавить старты некуда, разрыв уедет дальше',
+    gp_week:'Нед. {n}', gp_week4:'Нед. 4 →',
+    gp_w4_note:'Неделя 4: {g} гр. × {gs} = {p} чел. → FE в {m}',
+    gp_meta:'Конверсии: завершение онбординга {comp}% · сдаваемость {pass}% · итого {total}% · Размер группы: {gs} чел. · Недели 1–3 → FE в этом месяце · Неделя 4 → FE в следующем',
+    gp_note:'<b>Как читать:</b> недели с галочкой <b>«прошла»</b> (синхронизированы с вкладкой прогноза) — зафиксированная история: их старты и результаты не меняются. Карточка считает оставшийся разрыв по FE и раскладывает ДОПОЛНИТЕЛЬНЫЕ группы только на БУДУЩИЕ недели. Неделя 4 (янтарная) — рекомендация-задел под следующий месяц. Размер группы и конверсии — в тулбаре.',
+    gp_all_done:'Все месяцы отмечены как завершённые', gp_ppl:'чел.',
+    th_comp_hint:'× 45.5% · считается автоматически',
+    th_pass_hint:'× 58.3% от допущенных · считается автоматически',
+  }
+};
+
+function t(key, vars={}){
+  let s = STRINGS[lang][key] ?? STRINGS.en[key] ?? key;
+  Object.entries(vars).forEach(([k,v])=>{ s=s.replaceAll('{'+k+'}',v); });
+  return s;
+}
+
+function applyLang(){
+  // Language buttons
+  const isEn = lang==='en';
+  const enBtn = document.getElementById('lang-en');
+  const ruBtn = document.getElementById('lang-ru');
+  if(enBtn){ enBtn.style.background=isEn?'var(--btn-bg)':'transparent'; enBtn.style.color=isEn?'var(--btn-fg)':'var(--muted)'; }
+  if(ruBtn){ ruBtn.style.background=!isEn?'var(--btn-bg)':'transparent'; ruBtn.style.color=!isEn?'var(--btn-fg)':'var(--muted)'; }
+  // Static text updates
+  const set = (id,html,inner=false)=>{ const el=document.getElementById(id); if(el){ if(inner) el.innerHTML=html; else el.textContent=html; }};
+  set('hdr-meta1', t('hdr_meta1'));
+  set('hdr-meta2', t('hdr_meta2'));
+  set('lbl-cur-month', t('lbl_cur_month'));
+  set('lbl-completion', t('lbl_completion'));
+  set('hint-completion', t('hint_completion'), true);
+  set('lbl-passrate', t('lbl_passrate'));
+  set('hint-passrate', t('hint_passrate'), true);
+  set('lbl-combined', t('lbl_combined'));
+  set('lbl-groupsize', t('lbl_groupsize'));
+  set('unit-ppl', t('unit_ppl'));
+  set('hint-groupsize', t('hint_groupsize'));
+  set('tab-btn-forecast', t('tab_forecast'));
+  set('tab-btn-groups', t('tab_groups'));
+  set('chart-title', t('chart_title'));
+  set('tbl-title', t('tbl_title'));
+  set('tbl-subtitle', t('tbl_subtitle'));
+  set('th-month', t('th_month'));
+  set('th-target', t('th_target'), true);
+  // Headers with hint spans INSIDE must be rebuilt as a whole —
+  // writing the parent's innerHTML/textContent would otherwise destroy the hint span
+  const setTh = (thId, main, hintId, hint) => {
+    const el = document.getElementById(thId);
+    if(el) el.innerHTML = main + `<br><span id="${hintId}" style="font-weight:400;color:#bbb">${hint}</span>`;
+  };
+  setTh('th-onb',      t('th_onb'),      'th-onb-hint',      t('th_onb_hint'));
+  setTh('th-spillout', t('th_spillout'), 'th-spillout-hint', t('th_spillout_hint'));
+  setTh('th-spillin',  t('th_spillin'),  'th-spillin-hint',  t('th_spillin_hint'));
+  setTh('th-effonb',   t('th_effonb'),   'th-effonb-hint',   t('th_effonb_hint'));
+  setTh('th-sched',    t('th_sched'),    'th-completion',    ''); // filled by updateRatesDisplay
+  setTh('th-proj',     t('th_proj'),     'th-passrate',      ''); // filled by updateRatesDisplay
+  setTh('th-fact',     t('th_fact'),     'th-fact-hint',     t('th_fact_hint'));
+  set('th-gap', t('th_gap'));
+  updateRatesDisplay(); // refill the × % hints just recreated above
+  set('note-text', t('note'), true);
+  set('sc-opt', t('sc_opt'));
+  set('sc-pes', t('sc_pes'));
+  // Month dropdown options
+  document.querySelectorAll('[data-i18n-month]').forEach(el=>{ el.textContent=t(el.dataset.i18nMonth); });
+  updateSyncBadge(); // re-render sync badge in the new language
+}
+
+function switchLang(l){
+  lang = l;
+  applyLang();
+  render();
+}
+
+// ── Rates ─────────────────────────────────────────────────────────────
+// Preset scenarios — used to fill the toolbar inputs
+const PRESETS = {
+  base: { completion:.455, passRate:.583 },
+  opt:  { completion:.508, passRate:.65  },
+  pes:  { completion:.418, passRate:.55  },
+};
+
+// Read active rates from toolbar inputs (user-editable)
+function getRates(){
+  const comp = parseFloat(document.getElementById('inp-completion')?.value) || 45.5;
+  const pass = parseFloat(document.getElementById('inp-passrate')?.value)   || 58.3;
+  return { completion: comp/100, passRate: pass/100 };
+}
+
+// ── Cohort timing ─────────────────────────────────────────────────────
+// Each month has 4 weeks of ONB starters entered separately.
+// Weeks 1–3 → FE in THIS month
+// Week 4    → FE in NEXT month (spills over)
+// May week 4 is historical — assumed at capacity
+const MAY_W4 = 72;
+
+// ── Data ──────────────────────────────────────────────────────────────
+const MONTHS  = ['may','jun','jul','aug','sep','oct','nov'];
+const LABELS  = { may:'May', jun:'Jun', jul:'Jul', aug:'Aug', sep:'Sep', oct:'Oct', nov:'Nov' };
+function lbl(m){ return t(m); } // always use current lang
+let TARGETS = { may:44, jun:55, jul:21, aug:19, sep:62, oct:12, nov:33 };
+let STATUS  = { may:'done', jun:'current', jul:'future', aug:'future', sep:'future', oct:'future', nov:'future' };
+
+// ── State ─────────────────────────────────────────────────────────────
+// d1–d3: week "passed" flags (cohort results already included in the fact)
+// dIn:   carry-in cohort from prev month's W4 already passed FE
+let sc = 'base';
+const state = {
+  may:{ w1:0, w2:0, w3:0, w4:MAY_W4, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  jun:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  jul:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  aug:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  sep:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  oct:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+  nov:{ w1:0, w2:0, w3:0, w4:0, fact:0, d1:false, d2:false, d3:false, dIn:false, nc:false },
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────
+// Returns null if element doesn't exist (e.g. before first renderTable)
+function g(id){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  return parseFloat(el.value) || 0;
+}
+// Checkbox reader — null if not in DOM
+function gc(id){
+  const el = document.getElementById(id);
+  return el ? el.checked : null;
+}
+function prev(m){ const i=MONTHS.indexOf(m); return i>0?MONTHS[i-1]:null; }
+function next(m){ const i=MONTHS.indexOf(m); return i<MONTHS.length-1?MONTHS[i+1]:null; }
+
+function syncState(){
+  MONTHS.forEach(m=>{
+    // Only update if DOM element exists (null = not yet rendered)
+    const tgtVal = g(`tgt-${m}`);
+    if(tgtVal !== null && tgtVal > 0) TARGETS[m] = tgtVal;
+    if(STATUS[m] !== 'done'){
+      const w1=g(`w1-${m}`); if(w1!==null) state[m].w1=w1;
+      const w2=g(`w2-${m}`); if(w2!==null) state[m].w2=w2;
+      const w3=g(`w3-${m}`); if(w3!==null) state[m].w3=w3;
+      const w4=g(`w4-${m}`); if(w4!==null) state[m].w4=w4;
+      const d1=gc(`d1-${m}`); if(d1!==null) state[m].d1=d1;
+      const d2=gc(`d2-${m}`); if(d2!==null) state[m].d2=d2;
+      const d3=gc(`d3-${m}`); if(d3!==null) state[m].d3=d3;
+      const dIn=gc(`din-${m}`); if(dIn!==null) state[m].dIn=dIn;
+    }
+    const fact=g(`fact-${m}`); if(fact!==null) state[m].fact=fact;
+    const nc=gc(`nc-${m}`); if(nc!==null) state[m].nc=nc;
+  });
+}
+
+// Week 4 starters that spill into next month's FE
+function spillOut(m){
+  return state[m].w4; // May uses MAY_W4 set in initial state
+}
+
+// Starters received from previous month's week 4
+function spillIn(m){
+  const p = prev(m);
+  if(!p) return 0;
+  return spillOut(p);
+}
+
+// Weeks 1–3 starters — contribute to THIS month's FE
+function ownONB(m){
+  if(STATUS[m]==='done') return 0;
+  return state[m].w1 + state[m].w2 + state[m].w3;
+}
+
+// Total starters whose FE lands in month m
+function effectiveONB(m){
+  return ownONB(m) + spillIn(m);
+}
+
+function totalONB(m){
+  return state[m].w1 + state[m].w2 + state[m].w3 + state[m].w4;
+}
+
+function scheduled(m){
+  if(STATUS[m]==='done') return null;
+  return effectiveONB(m) * getRates().completion;
+}
+
+// Pure model projection from the FULL month cohort — never mixed with fact
+function projected(m){
+  if(STATUS[m]==='done') return null;
+  const s = scheduled(m);
+  if(s === null || effectiveONB(m) === 0) return null;
+  return Math.round(s * getRates().passRate);
+}
+
+// ── Week "passed" mechanics ───────────────────────────────────────────
+// A checked week = its cohort's FE results are already inside the fact.
+// Projection then counts ONLY unchecked cohorts → no double counting,
+// and month total = fact + remaining projection (no understating either).
+// Flags apply ONLY to the CURRENT month: in future months nothing has
+// passed yet by definition; in done months the fact is the whole story.
+// (Stale flags from month switches are thereby neutralised automatically.)
+function anyWeekDone(m){
+  if(STATUS[m]!=='current') return false;
+  const s = state[m];
+  return !!(s.d1 || s.d2 || s.d3 || (s.dIn && spillIn(m)>0));
+}
+
+// ONB starters whose FE lands in month m and has NOT happened yet
+function remainingONB(m){
+  if(STATUS[m]==='done') return 0;
+  const s = state[m];
+  const cur = STATUS[m]==='current'; // flags only matter for the current month
+  const own = (cur&&s.d1?0:s.w1) + (cur&&s.d2?0:s.w2) + (cur&&s.d3?0:s.w3);
+  const sp  = cur&&s.dIn ? 0 : spillIn(m);
+  return own + sp;
+}
+
+function projectedRemaining(m){
+  if(STATUS[m]==='done') return null;
+  const r = getRates();
+  return Math.round(remainingONB(m) * r.completion * r.passRate);
+}
+
+// What to compare vs plan:
+//  - done month: fact (empty = no data, not zero — avoids fake deficit cascade)
+//  - weeks marked passed: fact + projection of remaining cohorts (blended)
+//  - fact entered, nothing marked: fact only (old safe rule — never fact+proj)
+//  - otherwise: full projection
+function vsTarget(m){
+  if(STATUS[m]==='done') return state[m].fact > 0 ? state[m].fact : null;
+  if(anyWeekDone(m)) return state[m].fact + (projectedRemaining(m) || 0);
+  if(state[m].fact > 0) return state[m].fact;
+  return projected(m);
+}
+
+// Cascading carry-forward: surplus/deficit from prev month flows here.
+// A month with nc=true ("don't carry surplus") cuts its POSITIVE carry;
+// deficit always cascades — you can't wave away a shortfall with a lever.
+function carryIn(m){
+  const p = prev(m);
+  if(!p) return 0;
+  const pResult = vsTarget(p);
+  if(pResult === null) return 0;
+  const c = pResult - adjustedTarget(p);
+  if(c > 0 && state[p].nc) return 0;
+  return c;
+}
+
+// Surplus of prev month that was deliberately NOT carried (for display)
+function blockedCarry(m){
+  const p = prev(m);
+  if(!p || !state[p].nc) return 0;
+  const r = vsTarget(p);
+  if(r === null) return 0;
+  const c = r - adjustedTarget(p);
+  return c > 0 ? c : 0;
+}
+
+// Adjusted target after carry-forward (can be ≤ 0 = already covered)
+function adjustedTarget(m){
+  return TARGETS[m] - carryIn(m);
+}
+
+function hasData(m){
+  return totalONB(m) > 0 || state[m].fact > 0;
+}
+
+// ── Persistence ───────────────────────────────────────────────────────
+// Priority: URL hash (shareable) → localStorage (last session) → defaults
+// URL hash updates automatically as you type; localStorage is the fallback.
+const LS_KEY = 'tcm_planner_v1';
+
+function buildSnapshot(){
+  const curM = MONTHS.find(m=>STATUS[m]==='current') || 'jun';
+  const r = getRates();
+  return {
+    v: 1,
+    cur: curM,
+    sc, lang,
+    rates: { c: Math.round(r.completion*1000)/10, p: Math.round(r.passRate*1000)/10 },
+    targets: MONTHS.reduce((a,m)=>({...a,[m]:TARGETS[m]}),{}),
+    s: MONTHS.reduce((a,m)=>({...a,[m]:{
+      w1:state[m].w1, w2:state[m].w2, w3:state[m].w3,
+      w4:state[m].w4, fact:state[m].fact,
+      d1:state[m].d1?1:0, d2:state[m].d2?1:0, d3:state[m].d3?1:0, di:state[m].dIn?1:0, nc:state[m].nc?1:0
+    }}),{})
+  };
+}
+
+function applySnapshot(data){
+  if(!data || data.v !== 1) return false;
+  if(data.lang && (data.lang==='en'||data.lang==='ru')) lang = data.lang;
+  if(data.targets) MONTHS.forEach(m=>{ if(data.targets[m]>0) TARGETS[m]=data.targets[m]; });
+  if(data.s) MONTHS.forEach(m=>{
+    const s=data.s[m]; if(!s) return;
+    state[m].w1=s.w1||0; state[m].w2=s.w2||0;
+    state[m].w3=s.w3||0; state[m].w4=s.w4||0;
+    state[m].fact=s.fact||0;
+    state[m].d1=!!s.d1; state[m].d2=!!s.d2; state[m].d3=!!s.d3; state[m].dIn=!!s.di; state[m].nc=!!s.nc;
+  });
+  if(data.sc){
+    sc=data.sc;
+    ['sc-base','sc-opt','sc-pes'].forEach(x=>document.getElementById(x)?.classList.toggle('active',x===`sc-${data.sc}`));
+  }
+  if(data.rates){
+    const cEl=document.getElementById('inp-completion');
+    const pEl=document.getElementById('inp-passrate');
+    if(cEl) cEl.value=data.rates.c;
+    if(pEl) pEl.value=data.rates.p;
+  }
+  if(data.cur && MONTHS.includes(data.cur)){
+    MONTHS.forEach(m=>{
+      const idx=MONTHS.indexOf(m), curIdx=MONTHS.indexOf(data.cur);
+      STATUS[m]=idx<curIdx?'done':idx===curIdx?'current':'future';
+    });
+    const sel=document.getElementById('cur-month');
+    if(sel && data.cur!=='may') sel.value=data.cur;
+  }
+  return true;
+}
+
+let saveTimer = null;
+function saveToURL(){
+  if(remoteEnabled()) return; // remote is the source of truth — keep URLs clean
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try { history.replaceState(null,'','#'+btoa(JSON.stringify(buildSnapshot()))); } catch(e){}
+  }, 600);
+}
+
+function saveToLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(buildSnapshot())); } catch(e){}
+}
+
+function loadFromURL(){
+  const hash = window.location.hash.slice(1);
+  if(!hash) return false;
+  try { return applySnapshot(JSON.parse(atob(hash))); } catch(e){ return false; }
+}
+
+function loadFromLocal(){
+  try { return applySnapshot(JSON.parse(localStorage.getItem(LS_KEY))); } catch(e){ return false; }
+}
+
+// ── Remote sync (Supabase) ────────────────────────────────────────────
+// One row per ROOM_ID: { id, snapshot(jsonb), updated_at, updated_by }.
+// Writes happen only after a real user edit (dirty flag) — viewers never write.
+// Conflict model: last-write-wins; the badge shows who saved last and when.
+let dirty = false;
+let remoteTimer = null;
+let lastSync = null; // { iso, name, status }
+
+document.addEventListener('input',  ()=>{ dirty = true; });
+document.addEventListener('change', ()=>{ dirty = true; });
+
+function getUserName(){
+  let n = null;
+  try { n = localStorage.getItem('tcm_user_name'); } catch(e){}
+  if(!n){
+    n = (prompt(t('sync_name_prompt')) || '').trim() || 'anon';
+    try { localStorage.setItem('tcm_user_name', n); } catch(e){}
+  }
+  return n;
+}
+
+function fmtStamp(iso){
+  try {
+    return new Date(iso).toLocaleString(lang==='ru'?'ru-RU':'en-GB',
+      {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  } catch(e){ return iso; }
+}
+
+function updateSyncBadge(){
+  const el = document.getElementById('sync-badge');
+  if(!el) return;
+  if(!remoteEnabled()){ el.innerHTML=''; return; }
+  if(!lastSync){ el.textContent = '☁ …'; return; }
+  if(lastSync.status === 'error'){
+    el.innerHTML = `<span style="color:var(--red)">${t('sync_err')}</span>`;
+    return;
+  }
+  el.innerHTML = `☁ ${t('sync_upd',{d:fmtStamp(lastSync.iso), n:lastSync.name||'—'})}`;
+}
+
+function saveToRemote(){
+  if(!remoteEnabled()) return;
+  clearTimeout(remoteTimer);
+  remoteTimer = setTimeout(async ()=>{
+    // dirty is checked HERE (not at schedule time): inline oninput handlers
+    // fire before the document-level listener that sets the flag
+    if(!dirty) return;
+    try {
+      const body = {
+        id: ROOM_ID,
+        snapshot: buildSnapshot(),
+        updated_at: new Date().toISOString(),
+        updated_by: getUserName()
+      };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/planner_state`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(body)
+      });
+      lastSync = res.ok
+        ? { iso: body.updated_at, name: body.updated_by, status: 'saved' }
+        : { status: 'error' };
+    } catch(e){
+      lastSync = { status: 'error' };
+    }
+    updateSyncBadge();
+  }, 1200);
+}
+
+async function loadFromRemote(){
+  if(!remoteEnabled()) return false;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/planner_state?id=eq.${ROOM_ID}&select=snapshot,updated_at,updated_by`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    const rows = await res.json();
+    if(Array.isArray(rows) && rows[0] && rows[0].snapshot){
+      if(applySnapshot(rows[0].snapshot)){
+        lastSync = { iso: rows[0].updated_at, name: rows[0].updated_by, status: 'loaded' };
+        updateSyncBadge();
+        return true;
+      }
+    }
+    lastSync = null; // remote works but empty yet
+    updateSyncBadge();
+  } catch(e){
+    lastSync = { status: 'error' };
+    updateSyncBadge();
+  }
+  return false;
+}
+
+// ── Controls ──────────────────────────────────────────────────────────
+function setCurrentMonth(cur){
+  MONTHS.forEach(m=>{
+    const idx = MONTHS.indexOf(m);
+    const curIdx = MONTHS.indexOf(cur);
+    if(idx < curIdx)       STATUS[m] = 'done';
+    else if(idx === curIdx) STATUS[m] = 'current';
+    else                   STATUS[m] = 'future';
+  });
+  render();
+}
+
+function updateRatesDisplay(){
+  const r = getRates();
+  const comp  = Math.round(r.completion*1000)/10;
+  const pass  = Math.round(r.passRate*1000)/10;
+  const total = Math.round(r.completion*r.passRate*1000)/10;
+  const combined = document.getElementById('rate-combined');
+  if(combined) combined.textContent = total + '%';
+  const thComp = document.getElementById('th-completion');
+  if(thComp) thComp.textContent = `× ${comp}% · ` + (lang==='ru'?'считается автоматически':'auto');
+  const thPass = document.getElementById('th-passrate');
+  if(thPass) thPass.textContent = `× ${pass}% ` + (lang==='ru'?'от допущенных · считается автоматически':'from admitted · auto');
+}
+
+function onRateChange(){
+  updateRatesDisplay();
+  render();
+}
+
+function setSc(s, id){
+  sc = s;
+  ['sc-base','sc-opt','sc-pes'].forEach(x=>document.getElementById(x).classList.toggle('active',x===id));
+  // Fill inputs with preset values
+  const p = PRESETS[s];
+  const cEl = document.getElementById('inp-completion');
+  const pEl = document.getElementById('inp-passrate');
+  if(cEl) cEl.value = Math.round(p.completion*1000)/10;
+  if(pEl) pEl.value = Math.round(p.passRate*1000)/10;
+  updateRatesDisplay();
+  render();
+}
+
+// ── Render ────────────────────────────────────────────────────────────
+function render(){
+  // Save focus state before re-rendering (innerHTML wipes the DOM)
+  const active     = document.activeElement;
+  const focusedId  = active?.id;
+  const selStart   = active?.selectionStart;
+  const selEnd     = active?.selectionEnd;
+  // Keep EXACTLY what the user has typed (incl. empty string) — otherwise
+  // the re-render writes the last stored value back and deletion is impossible
+  const focusedVal = (active && active.tagName==='INPUT' && (active.type==='text'||active.type==='number'))
+    ? active.value : null;
+
+  syncState();
+  renderTable();
+  renderChart();
+  renderGroupPlanner();
+
+  // Restore focus, typed value and cursor position after re-render
+  if(focusedId){
+    const el = document.getElementById(focusedId);
+    if(el){
+      if(focusedVal !== null && el.tagName==='INPUT' && (el.type==='text'||el.type==='number')){
+        el.value = focusedVal;
+      }
+      el.focus();
+      try{ el.setSelectionRange(selStart, selEnd); }catch(e){}
+    }
+  }
+
+  saveToURL();
+  saveToLocal();
+  saveToRemote();
+}
+
+// ── Table ─────────────────────────────────────────────────────────────
+function renderTable(){
+  document.getElementById('tbody').innerHTML = MONTHS.map(m=>{
+    const tgt    = TARGETS[m];
+    const adjTgt = adjustedTarget(m);
+    const ci     = carryIn(m);
+    const st     = STATUS[m];
+    const proj   = projected(m);   // pure model output, null if no ONB data
+    const fact   = state[m].fact;
+    const vs     = vsTarget(m);    // what to compare vs plan: fact if entered, else proj
+    const sched  = scheduled(m);
+    const gap    = vs !== null ? vs - adjTgt : null;  // vs ADJUSTED target — same base as cascade & status
+    const hd     = hasData(m);
+    const rowCls = st==='done'?'done-row':st==='current'?'current-row':'';
+    const so     = spillOut(m);
+    const si     = spillIn(m);
+    const effOnb = effectiveONB(m);
+
+    // Blended mode: some weeks marked "passed" → column shows month total
+    // (fact + projection of remaining cohorts) instead of full-month model
+    const blended = anyWeekDone(m);
+    const projRem = projectedRemaining(m);
+    const shown   = blended ? vs : proj;   // vs = fact + projRem when blended
+
+    // Colour for the projection column — vs adjusted target
+    let projCls = 'muted';
+    if(shown !== null) projCls = shown>=adjTgt?'green':shown>=adjTgt-5?'amber':'red';
+
+    // Badge: surplus vs ADJUSTED target (same base as cascade & status)
+    // adjTgt <= 0 → month already fully covered by carry — show mark, not a huge number
+    let badge='<span class="badge badge-gray">—</span>';
+    if(adjTgt <= 0 && vs !== null){
+      badge = `<span class="badge badge-green">${t('carry_covered')}</span>`;
+    } else if(gap !== null){
+      if(gap>=0)       badge=`<span class="badge badge-green">+${gap}</span>`;
+      else if(gap>=-5) badge=`<span class="badge badge-amber">${gap}</span>`;
+      else             badge=`<span class="badge badge-red">${gap}</span>`;
+    }
+
+    // Carry annotation in target cell
+    const prevM = prev(m);
+    const ciAbs = Math.abs(Math.round(ci));
+    const carryAnnotation = ci !== 0 && prevM ? `
+      <span style="font-size:.55rem;display:block;margin-top:4px;color:${ci>0?'var(--green)':'var(--red)'}">
+        ${ci>0 ? t('carry_plus',{n:ciAbs,m:lbl(prevM)}) : t('carry_minus',{n:ciAbs,m:lbl(prevM)})}
+      </span>
+      <span style="font-size:.6rem;display:block;color:var(--muted)">
+        ${adjTgt<=0
+          ? `<span style="color:var(--green)">${t('carry_covered')}</span>`
+          : `${t('carry_needed')} <b>${adjTgt}</b>`}
+      </span>` : '';
+
+    const mLbl = `<b>${lbl(m)}</b>${st==='current'?` <span style="font-size:.55rem;color:var(--accent);letter-spacing:.07em">${t('cur_tag')}</span>`:''}`;
+    const nm = next(m);
+    const spillOutStr = so>0
+      ? `<span style="color:var(--amber);font-weight:600">${so}</span><span style="font-size:.55rem;color:var(--muted);display:block">${t('spill_to',{m:nm?lbl(nm):'Dec'})}</span>`
+      : `<span style="color:#ccc">—</span>`;
+    const spillInStr  = si>0
+      ? `<span style="color:var(--green);font-weight:600">+${si}</span><span style="font-size:.55rem;color:var(--muted);display:block">${t('spill_from',{m:prev(m)?lbl(prev(m)):lbl('may')})}</span>
+         ${st==='current' ? `<label style="display:flex;align-items:center;gap:3px;font-size:.5rem;color:${state[m].dIn?'var(--green)':'var(--muted)'};cursor:pointer;margin-top:3px;white-space:nowrap">
+           <input type="checkbox" id="din-${m}" ${state[m].dIn?'checked':''} onchange="render()"
+             style="accent-color:var(--green);width:11px;height:11px;cursor:pointer">${t('spill_done')}
+         </label>` : ''}`
+      : `<span style="color:#ccc">—</span>`;
+    // Only show scheduled if there's actual ONB flow (not just a fact entry)
+    const schedVal = effOnb > 0 && sched !== null ? Math.round(sched) : null;
+
+    const wInp = (n, wk) => `
+      <div style="display:flex;align-items:baseline;gap:5px">
+        <span style="font-size:.55rem;color:${n===4?'var(--amber)':'var(--muted)'};min-width:52px;letter-spacing:.04em">${n===4?t('week4_lbl'):t('week_n',{n})}</span>
+        <div>
+          <input class="num-inp${n===4?' fact-inp':''}" type="text" inputmode="numeric" pattern="[0-9]*" id="w${n}-${m}"
+            value="${wk||''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'');render()"
+            style="width:60px;font-size:1.3rem;${n===4?'border-bottom-color:var(--amber);color:var(--amber)':''}">
+        </div>
+        ${n<4 && st==='current' ? `<label style="display:flex;align-items:center;gap:3px;font-size:.5rem;color:${state[m]['d'+n]?'var(--green)':'var(--muted)'};cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="d${n}-${m}" ${state[m]['d'+n]?'checked':''} onchange="render()"
+            style="accent-color:var(--green);width:11px;height:11px;cursor:pointer">${t('wk_done')}
+        </label>` : ''}
+      </div>`;
+
+    const blocked = blockedCarry(m);
+    const tgtInp = `<input class="num-inp" type="text" inputmode="numeric" pattern="[0-9]*" id="tgt-${m}"
+      value="${tgt||''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'');render()"
+      style="width:70px;font-size:1.6rem">
+      <span class="inp-hint">${t('lbl_plan')}</span>
+      ${carryAnnotation}
+      ${blocked>0 ? `<span style="font-size:.55rem;display:block;margin-top:3px;color:var(--muted);text-decoration:line-through">+${blocked} ${t('spill_from',{m:lbl(prevM)})}</span><span style="font-size:.5rem;display:block;color:var(--red)">${t('nc_blocked')}</span>` : ''}
+      ${nm ? `<label style="display:flex;align-items:center;gap:3px;font-size:.5rem;color:${state[m].nc?'var(--red)':'var(--muted)'};cursor:pointer;margin-top:5px;white-space:nowrap">
+        <input type="checkbox" id="nc-${m}" ${state[m].nc?'checked':''} onchange="render()"
+          style="accent-color:var(--red);width:11px;height:11px;cursor:pointer">${t('nc_toggle')}
+      </label>` : ''}`;
+
+    // ── May (done) ──
+    if(st==='done'){
+      return `<tr class="${rowCls}">
+        <td>${mLbl}</td>
+        <td>${tgtInp}</td>
+        <td style="color:#aaa;font-size:.75rem;line-height:2">
+          <div>${m==='may' ? t('done_w123') : t('done_w123_n',{n:state[m].w1+state[m].w2+state[m].w3})}</div>
+          <div style="color:var(--amber)">${m==='may' ? t('done_w4',{n:MAY_W4}) : t('done_w4_n',{n:state[m].w4})}</div>
+        </td>
+        <td><span style="color:var(--amber);font-weight:600">${spillOut(m)}</span><span style="font-size:.55rem;color:var(--muted);display:block">${m==='may' ? t('spill_assumption') : (nm ? t('spill_to',{m:lbl(nm)}) : '')}</span></td>
+        <td style="color:#ccc;font-size:.8rem">—</td>
+        <td class="sep" style="color:#ccc;font-size:.8rem">—</td>
+        <td style="color:#ccc;font-size:.8rem">—</td>
+        <td style="color:#ccc;font-size:.8rem">—</td>
+        <td class="sep">
+          <input class="num-inp fact-inp" type="text" inputmode="numeric" pattern="[0-9]*" id="fact-${m}"
+            value="${state[m].fact||''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'');render()">
+          <span class="inp-hint amber">${t('lbl_fact')}</span>
+        </td>
+        <td>${badge}</td>
+      </tr>`;
+    }
+
+    // ── Current / Future ──
+    return `<tr class="${rowCls}">
+      <td>${mLbl}</td>
+      <td>${tgtInp}</td>
+
+      <td style="padding-top:.4rem;padding-bottom:.4rem">
+        ${wInp(1, state[m].w1)}
+        ${wInp(2, state[m].w2)}
+        ${wInp(3, state[m].w3)}
+        ${wInp(4, state[m].w4)}
+      </td>
+
+      <td>${spillOutStr}</td>
+      <td>${spillInStr}</td>
+
+      <td class="sep">
+        <span class="big-num ${effOnb>0?'':'muted'}">${effOnb>0?effOnb:'—'}</span>
+        ${effOnb>0?`<span style="font-size:.55rem;color:var(--muted);display:block;margin-top:2px">${t('lbl_weeks_plus')}</span>`:''}
+      </td>
+
+      <td>
+        <span class="big-num ${schedVal!==null?'':'muted'}">${schedVal!==null?schedVal:'—'}</span>
+        ${schedVal!==null?`<span style="font-size:.55rem;color:var(--muted);display:block;margin-top:2px">${t('lbl_admitted')}</span>`:''}
+      </td>
+
+      <td>
+        ${blended
+          ? (fact > 0
+            ? `<span class="big-num ${projCls}">${vs}</span><span style="font-size:.55rem;color:var(--muted);display:block;margin-top:2px">${t('fact_plus_rest',{f:fact,r:projRem??0})}</span>`
+            : `<span class="big-num amber">${vs}</span><span style="font-size:.55rem;color:var(--amber);display:block;margin-top:2px;max-width:130px">${t('warn_no_fact')}</span>`)
+          : (proj !== null
+            ? `<span class="big-num ${projCls}">${proj}</span><span style="font-size:.55rem;color:var(--muted);display:block;margin-top:2px">${t('lbl_forecast')}</span>`
+            : `<span style="color:#ccc;font-size:.8rem">—</span>`)}
+      </td>
+
+      <td class="sep">
+        <input class="num-inp fact-inp" type="text" inputmode="numeric" pattern="[0-9]*" id="fact-${m}"
+          value="${state[m].fact||''}" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'');render()">
+        <span class="inp-hint amber">${blended && fact===0 ? `<b>${t('warn_fact_here')}</b>` : t('lbl_fact')}</span>
+      </td>
+
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────
+let chartObj=null;
+function renderChart(){
+  const labels  = MONTHS.map(m=>lbl(m));
+  const targets = MONTHS.map(m=>TARGETS[m]);
+  const adjTargets = MONTHS.map(m=>adjustedTarget(m));
+  // Current rates (from inputs)
+  // done → fact; weeks passed → blended month total; else full projection
+  const projData = MONTHS.map(m=> STATUS[m]==='done' ? (state[m].fact || null) : (vsTarget(m) ?? null));
+  // Preset reference lines (thin, background) — same blending rules as the main bar:
+  // realized fact is fixed, only the remaining pipeline varies with the scenario
+  const presetProj = scn => {
+    const p = PRESETS[scn];
+    return MONTHS.map(m=>{
+      if(STATUS[m]==='done') return null;
+      if(anyWeekDone(m)) return state[m].fact + Math.round(remainingONB(m) * p.completion * p.passRate);
+      if(state[m].fact > 0) return null; // fact-only month: nothing model-driven to compare
+      const eff = effectiveONB(m);
+      if(eff===0) return null;
+      return Math.round(eff * p.completion * p.passRate);
+    });
+  };
+
+  if(chartObj){chartObj.destroy();chartObj=null;}
+  chartObj = new Chart(document.getElementById('chart'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { label:t('ch_plan'), data:targets, type:'line',
+          borderColor:'#111',backgroundColor:'transparent',
+          pointRadius:3,pointBackgroundColor:'#111',tension:.2,borderWidth:2,borderDash:[],order:0 },
+        { label:t('ch_adj'), data:adjTargets, type:'line',
+          borderColor:'#888',backgroundColor:'transparent',
+          pointRadius:3,pointBackgroundColor:'#888',tension:.2,borderWidth:1,borderDash:[4,3],order:0 },
+        { label:t('ch_forecast'), data:projData,
+          backgroundColor:'rgba(232,57,26,0.75)',borderColor:'#E8391A',borderWidth:0,order:1 },
+        { label:t('ch_base'), data:presetProj('base'),
+          backgroundColor:'rgba(0,0,0,0.06)',borderColor:'rgba(0,0,0,0.2)',borderWidth:1,order:2 },
+        { label:t('ch_opt'), data:presetProj('opt'),
+          backgroundColor:'rgba(26,107,54,0.1)',borderColor:'rgba(26,107,54,0.3)',borderWidth:1,order:3 },
+        { label:t('ch_pes'), data:presetProj('pes'),
+          backgroundColor:'rgba(192,57,43,0.08)',borderColor:'rgba(192,57,43,0.25)',borderWidth:1,order:4 },
+      ],
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{font:{family:'DM Mono',size:10},color:'#888',boxWidth:14,padding:14}},
+        tooltip:{mode:'index',intersect:false,
+          backgroundColor:'#111',titleColor:'#F4EFE4',bodyColor:'#aaa',
+          titleFont:{family:'Bebas Neue',size:13},bodyFont:{family:'DM Mono',size:10},
+          padding:10,cornerRadius:0},
+      },
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#ddd'},border:{display:false},
+          ticks:{color:'#888',font:{family:'DM Mono',size:10},stepSize:10}},
+        x:{grid:{display:false},border:{display:false},
+          ticks:{color:'#888',font:{family:'DM Mono',size:10}}},
+      },
+    },
+  });
+  const r = getRates();
+  const comp  = Math.round(r.completion*1000)/10;
+  const pass  = Math.round(r.passRate*1000)/10;
+  const total = Math.round(r.completion*r.passRate*1000)/10;
+  document.getElementById('chart-meta').textContent=t('ch_meta',{comp,pass,total});
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────
+let activeTab = 'forecast';
+function switchTab(tab){
+  activeTab = tab;
+  ['forecast','groups'].forEach(tb=>{
+    document.getElementById(`tab-${tb}`)?.classList.toggle('active', tb===tab);
+    document.getElementById(`tab-btn-${tb}`)?.classList.toggle('active', tb===tab);
+  });
+  render();
+}
+
+// ── Group size ────────────────────────────────────────────────────────
+function getGroupSize(){
+  return Math.max(1, parseInt(document.getElementById('inp-groupsize')?.value) || 15);
+}
+
+// ── Week toggle shared between tabs ───────────────────────────────────
+// The Group Planner checkboxes flip the SAME d-flags as the Forecast tab.
+// Sync the Forecast tab's checkbox DOM first so syncState doesn't undo us.
+function setWeekDone(m, n, val){
+  const f = document.getElementById(`d${n}-${m}`);
+  if(f) f.checked = val;
+  state[m]['d'+n] = val;
+  render();
+}
+
+// ── Reverse calculator ────────────────────────────────────────────────
+// Given FE target for a month, compute required ADDITIONAL ONB starters per week.
+// Uses ADJUSTED target (plan carry cascade from Forecast tab) so both tabs agree.
+// No overlap between the three deductions:
+//   effTgt  — target minus surplus/deficit carried from prev month's RESULT
+//   carryFE — FE passes produced by prev month's W4 cohort (lands in this month)
+//   alreadyFE — FE passes from people already started in weeks 1–3
+function reverseCalc(m){
+  const r   = getRates();
+  const gs  = getGroupSize();
+  const tgt = TARGETS[m];
+  const effTgt = adjustedTarget(m);   // plan carry from Forecast tab cascade
+  const p   = prev(m);
+
+  const s = state[m];
+
+  // What is already realized: fact (same reading rules as the Forecast tab)
+  const doneFE = s.fact > 0 ? s.fact : 0;
+
+  // Future FE from cohorts already started but not yet passed:
+  // unchecked weeks 1–3 + unchecked carry-in (identical to Forecast tab's remaining projection)
+  let pipeFE;
+  if(anyWeekDone(m))      pipeFE = projectedRemaining(m) || 0;
+  else if(s.fact > 0)     pipeFE = 0;                         // legacy rule: fact replaces projection
+  else                    pipeFE = projectedRemaining(m) || 0; // nothing checked = full pipeline
+
+  const needFE = Math.max(0, effTgt - doneFE - pipeFE);
+
+  // Distribute ADDITIONAL starters over FUTURE weeks only
+  // ("passed" flags only apply to the current month)
+  const isCur = STATUS[m]==='current';
+  const futureWeeks = [1,2,3].filter(n=> !(isCur && s['d'+n]));
+  const nFuture  = futureWeeks.length;
+  const onbTotal = needFE > 0 ? Math.ceil(needFE / (r.completion * r.passRate)) : 0;
+  const perWeek  = onbTotal > 0 && nFuture > 0 ? Math.ceil(onbTotal / nFuture) : 0;
+  const groups123 = perWeek > 0 ? Math.ceil(perWeek / gs) : 0;
+  const actualPerWeek = groups123 * gs; // rounded up to full groups
+
+  // W4 recommendation: seed enough for 1 even week of next month's ONB
+  // (also based on next month's ADJUSTED target)
+  const nm = next(m);
+  const nextTgt = nm ? Math.max(0, adjustedTarget(nm)) : 0;
+  const nextOnbTotal = nm ? Math.ceil(nextTgt / (r.completion * r.passRate)) : 0;
+  const w4People = nm ? Math.ceil(nextOnbTotal / 4) : 0; // contribute 1/4 of next month's ONB
+  const w4Groups = w4People > 0 ? Math.ceil(w4People / gs) : 0;
+
+  return { tgt, effTgt, doneFE, pipeFE, needFE, futureWeeks, nFuture, onbTotal, perWeek, groups123, actualPerWeek, w4People, w4Groups, gs };
+}
+
+function renderGroupPlanner(){
+  const el = document.getElementById('gp-content');
+  if(!el) return;
+  const gs = getGroupSize();
+  const r  = getRates();
+  const comp  = Math.round(r.completion*1000)/10;
+  const pass  = Math.round(r.passRate*1000)/10;
+  const total = Math.round(r.completion*r.passRate*1000)/10;
+
+  const cards = MONTHS.map(m=>{
+    const st = STATUS[m];
+    if(st === 'done') return ''; // skip done months
+    const c = reverseCalc(m);
+    const isCur = st === 'current';
+    const nm = next(m);
+
+    const s = state[m];
+
+    // Week cell: passed → frozen history; future → recommended ADDITIONAL groups
+    const weekBlock = (n) => {
+      if(n === 4){
+        const clr = c.w4Groups > 0 ? 'var(--amber)' : '#ccc';
+        return `<div class="gp-week w4">
+          <div class="gp-week-label">${t('gp_week4')}</div>
+          <div class="gp-week-groups" style="color:${clr}">${c.w4Groups > 0 ? c.w4Groups : '—'}</div>
+          <div class="gp-week-people">${c.w4Groups > 0 ? c.w4Groups*gs+' '+t('gp_ppl') : ''}</div>
+        </div>`;
+      }
+      const passed  = isCur && s['d'+n];   // flags only apply to the current month
+      const started = s['w'+n];
+      const cb = isCur ? `<label style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:.5rem;color:${passed?'var(--green)':'var(--muted)'};cursor:pointer;margin-top:4px">
+        <input type="checkbox" ${passed?'checked':''} onchange="setWeekDone('${m}',${n},this.checked)"
+          style="accent-color:var(--green);width:11px;height:11px;cursor:pointer">${t('wk_done')}
+      </label>` : '';
+      if(passed){
+        return `<div class="gp-week" style="opacity:.7;background:var(--bg)">
+          <div class="gp-week-label" style="color:var(--green)">✓ ${t('gp_week',{n})}</div>
+          <div class="gp-week-groups" style="color:var(--muted)">${started||0}</div>
+          <div class="gp-week-people">${t('gp_started')}</div>
+          ${cb}
+        </div>`;
+      }
+      const clr = c.groups123 > 0 ? 'var(--fg)' : '#ccc';
+      return `<div class="gp-week">
+        <div class="gp-week-label">${t('gp_week',{n})}</div>
+        <div class="gp-week-groups" style="color:${clr}">${c.groups123 > 0 ? '+'+c.groups123 : '—'}</div>
+        <div class="gp-week-people">${c.groups123 > 0 ? c.groups123*gs+' '+t('gp_ppl') : ''}${started ? `<span style="display:block">${t('gp_already_n',{n:started})}</span>` : ''}</div>
+        ${cb}
+      </div>`;
+    };
+
+    return `<div class="gp-card${isCur?' current':''}">
+      <div class="gp-month">${lbl(m)}${isCur?`<span class="cur-tag">${t('cur_tag')}</span>`:''}</div>
+
+      <div class="gp-row">
+        <span class="lbl">${t('gp_target')}</span>
+        <span class="val">${c.tgt}</span>
+      </div>
+      ${c.effTgt !== c.tgt ? `<div class="gp-row">
+        <span class="lbl">${t('gp_adj')}</span>
+        <span class="val ${c.effTgt < c.tgt ? 'green' : ''}" style="${c.effTgt > c.tgt ? 'color:var(--red)' : ''}">${c.effTgt}</span>
+      </div>` : ''}
+      ${c.doneFE > 0 ? `<div class="gp-row">
+        <span class="lbl">${t('gp_fact')}</span>
+        <span class="val green">−${c.doneFE}</span>
+      </div>` : ''}
+      ${c.pipeFE > 0 ? `<div class="gp-row">
+        <span class="lbl">${t('gp_pipe')}</span>
+        <span class="val green">−${c.pipeFE}</span>
+      </div>` : ''}
+      <div class="gp-row">
+        <span class="lbl">${t('gp_own')}</span>
+        <span class="val${c.needFE===0?' muted':''}">${c.needFE > 0 ? c.needFE : t('gp_covered')}</span>
+      </div>
+
+      <hr class="gp-divider">
+
+      <div class="gp-row">
+        <span class="lbl">${t('gp_onb_total')}</span>
+        <span class="val accent">${c.onbTotal > 0 ? c.onbTotal+' '+t('gp_ppl') : '—'}</span>
+      </div>
+      <div class="gp-row">
+        <span class="lbl">${t('gp_per_week',{n:c.nFuture})}</span>
+        <span class="val">${c.perWeek > 0 ? c.actualPerWeek+' '+t('gp_ppl') : '—'}</span>
+      </div>
+      <div class="gp-row">
+        <span class="lbl">${t('gp_groups_week',{gs})}</span>
+        <span class="val accent">${c.groups123 > 0 ? c.groups123 : '—'}</span>
+      </div>
+
+      <div class="gp-week-grid">
+        ${weekBlock(1)}
+        ${weekBlock(2)}
+        ${weekBlock(3)}
+        ${weekBlock(4)}
+      </div>
+
+      ${c.needFE > 0 && c.nFuture === 0 ? `<div style="font-size:.55rem;color:var(--red);margin-top:2px">
+        ${t('gp_all_passed')}
+      </div>` : ''}
+      ${nm ? `<div style="font-size:.55rem;color:var(--amber);margin-top:2px">
+        ${c.w4Groups > 0 ? t('gp_w4_note',{g:c.w4Groups,gs,p:c.w4People,m:lbl(nm)}) : '—'}
+      </div>` : ''}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  el.innerHTML = `
+    <div style="font-size:.62rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.8;border-bottom:1px solid #ddd;padding-bottom:.8rem">
+      ${t('gp_meta',{comp,pass,total,gs})}
+    </div>
+    <div class="gp-grid">${cards || `<div style="color:var(--muted);font-size:.8rem">${t('gp_all_done')}</div>`}</div>
+    <div class="note">
+      ${t('gp_note')}
+    </div>`;
+}
+
+(async function boot(){
+  let loaded = false;
+  if(remoteEnabled()){
+    // Remote is the shared source of truth; URL hash only as fallback
+    loaded = await loadFromRemote();
+    if(!loaded) loaded = loadFromURL();
+  } else {
+    loaded = loadFromURL();
+  }
+  if(!loaded) loadFromLocal();
+  applyLang();
+  updateRatesDisplay();
+  render();
+  dirty = false; // boot render must never write to remote
+})();
+</script>
+</body>
+</html>
